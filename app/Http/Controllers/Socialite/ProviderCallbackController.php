@@ -27,6 +27,7 @@ class ProviderCallbackController extends Controller
         ], [
             'name' => $socialUser->name,
             'email' => $socialUser->email,
+            'avatar' => $socialUser->avatar,
             'provider_token' => $socialUser->token,
             'provider_refresh_token' => $socialUser->refreshToken
         ]);

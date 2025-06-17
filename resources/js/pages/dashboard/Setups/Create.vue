@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
-import { useForm } from 'vee-validate';
+import { useForm as veeForm } from 'vee-validate';
+import { useForm as inertiaForm } from '@inertiajs/vue3';
 import
 {
     FormField,
@@ -24,7 +25,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Create Setup',
         href: '/dashboard/setups/create'
-    }
+    },
 ];
 
 const props = defineProps<{
@@ -44,25 +45,43 @@ const formSchema = toTypedSchema(z.object({
     is_public: z.boolean().optional(),
 }));
 
-const { handleSubmit } = useForm({
-    validationSchema: formSchema,
-    initialValues: {
-        simulator_id: 0,
-        track_id: 0,
-        car_id: 0,
-        lap_time_ms: '',
-        lap_time_recorded_at: '',
-        setup_type: '',
-        setup_data: undefined,
-        is_public: false,
-    }
+const { handleSubmit } = veeForm({ validationSchema: formSchema });
+
+const form = inertiaForm({
+    simulator_id: null,
+    track_id: null,
+    car_id: null,
+    lap_time_ms: '',
+    lap_time_recorded_at: null,
+    setup_type: '',
+    setup_data: null,
+    is_public: false,
 });
 
-const onSubmit = handleSubmit((values) =>
+const onSubmit = handleSubmit(() =>
 {
-    toast('You submitted the following values:', {
-        description: h('pre', { class: 'mt-2 w-[340px] rounded-md bg-slate-950 p-4' }, h('code', { class: 'text-white' }, JSON.stringify(values, null, 2))),
-    })
+    const payload = new FormData();
+    payload.append('simulator_id', form.simulator_id as any);
+    payload.append('track_id', form.track_id as any);
+    payload.append('car_id', form.car_id as any);
+    payload.append('lap_time_ms', form.best_lap_time);
+    payload.append('lap_time_recorded_at', form.best_lap_time);
+    payload.append('setup_type', form.setup_type);
+    payload.append('setup_data', form.setup_data as File);
+    payload.append('is_public', form.is_public ? '1' : '0');
+
+    form.post(route('api.setups.store'), {
+        data: payload,
+        forceFormData: true,
+        onSuccess: () =>
+        {
+            form.reset();
+
+            toast('Setup has been successfully created!', {
+                description: h('pre', { class: 'mt-2 w-[340px] rounded-md bg-slate-950 p-4' }, h('code', { class: 'text-white' }, JSON.stringify(values, null, 2))),
+            })
+        },
+    });
 });
 </script>
 
@@ -74,11 +93,11 @@ const onSubmit = handleSubmit((values) =>
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
             <div class="relative flex-1">
                 <form @submit="onSubmit" class="flex flex-col space-y-2">
-                    <FormField name="simulator_id" v-slot="{ componentField }">
+                    <FormField name="simulator_id" v-slot="{ field }">
                         <FormItem>
                             <FormLabel>Simulator</FormLabel>
                             <FormControl>
-                                <Select v-bind="componentField" @blur="componentField.blur">
+                                <Select v-bind="field" @blur="field.blur">
                                     <SelectTrigger class="w-full">
                                         <SelectValue placeholder="Select a simulator" />
                                     </SelectTrigger>
@@ -91,11 +110,11 @@ const onSubmit = handleSubmit((values) =>
                         </FormItem>
                     </FormField>
 
-                    <FormField name="track_id" v-slot="{ componentField }">
+                    <FormField name="track_id" v-slot="{ field }">
                         <FormItem>
                             <FormLabel>Track</FormLabel>
                             <FormControl>
-                                <Select v-bind="componentField" @blur="componentField.blur">
+                                <Select v-bind="field" @blur="field.blur">
                                     <SelectTrigger class="w-full">
                                         <SelectValue placeholder="Select a track" />
                                     </SelectTrigger>
@@ -108,11 +127,11 @@ const onSubmit = handleSubmit((values) =>
                         </FormItem>
                     </FormField>
 
-                    <FormField name="car_id" v-slot="{ componentField }">
+                    <FormField name="car_id" v-slot="{ field }">
                         <FormItem>
                             <FormLabel>Car</FormLabel>
                             <FormControl>
-                                <Select v-bind="componentField" @blur="componentField.blur">
+                                <Select v-bind="field" @blur="field.blur">
                                     <SelectTrigger class="w-full">
                                         <SelectValue placeholder="Select a car" />
                                     </SelectTrigger>
@@ -125,41 +144,41 @@ const onSubmit = handleSubmit((values) =>
                         </FormItem>
                     </FormField>
 
-                    <FormField name="lap_time_ms" v-slot="{ componentField }">
+                    <FormField name="lap_time_ms" v-slot="{ field }">
                         <FormItem>
                             <FormLabel>Best Lap Time</FormLabel>
                             <FormControl>
-                                <Input v-bind="componentField" placeholder="1:45.678" />
+                                <Input v-bind="field" placeholder="1:45.678" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     </FormField>
 
-                    <FormField name="lap_time_recorded_at" v-slot="{ componentField }">
+                    <FormField name="lap_time_recorded_at" v-slot="{ field }">
                         <FormItem>
                             <FormLabel>Lap Time Recorded At</FormLabel>
                             <FormControl>
-                                <Input v-bind="componentField" placeholder="2025-01-01 13:30:00" />
+                                <Input v-bind="field" placeholder="2025-01-01 13:30:00" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     </FormField>
 
-                    <FormField name="setup_type" v-slot="{ componentField }">
+                    <FormField name="setup_type" v-slot="{ field }">
                         <FormItem>
                             <FormLabel>Setup Type</FormLabel>
                             <FormControl>
-                                <Input v-bind="componentField" placeholder="e.g. Quali, Race" />
+                                <Input v-bind="field" placeholder="e.g. Quali, Race" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     </FormField>
 
-                    <FormField name="setup_data" v-slot="{ handleChange, handleBlur }">
+                    <FormField name="setup_data" v-slot="{ handleChange }">
                         <FormItem>
-                            <FormLabel>Setup JSON File</FormLabel>
+                            <FormLabel>Setup File</FormLabel>
                             <FormControl>
-                                <Input type="file" id="setup_data" accept=".json" @change="handleChange" @blur="handleBlur" class="file:mr-4 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
+                                <Input type="file" id="setup_data" accept=".json" @change="(e) => { handleChange(e); form.setup_data = (e.target.files?.[0]!) }" class="file:mr-4 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

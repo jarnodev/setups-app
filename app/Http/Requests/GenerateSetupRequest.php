@@ -3,16 +3,15 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Auth;
 
-class StoreSetupRequest extends FormRequest
+class GenerateSetupRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return Auth::check();
+        return true;
     }
 
     /**
@@ -23,15 +22,11 @@ class StoreSetupRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'uuid' => 'required|string',
             'simulator_id' => 'required|exists:simulators,id',
             'track_id' => 'required|exists:tracks,id',
             'car_id' => 'required|exists:cars,id',
-            'lap_time_ms' => 'nullable|numeric',
-            'lap_time_recorded_at' => 'nullable|timestamp',
             'setup_type' => 'nullable|string',
             'setup_data' => 'nullable|json',
-            'is_public' => 'boolean',
         ];
     }
 }

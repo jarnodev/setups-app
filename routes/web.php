@@ -28,6 +28,6 @@ Route::group([
     Route::get('race-engineer', [RaceEngineerController::class, 'index'])->name('race-engineer');
     Route::get('setups', [SetupController::class, 'index'])->name('setups.index');
     Route::get('setups/create', [SetupController::class, 'create'])->name('setups.create');
-    Route::post('setups', [SetupController::class, 'store'])->name('setups.store');
+    Route::get('setups/{setup}', [SetupController::class, 'view'])->name('setups.view');
     Route::get('community', [CommunityController::class, 'index'])->name('community');
 });

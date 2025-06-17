@@ -13,15 +13,22 @@ use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 
-
 class SetupController extends Controller
 {
     public function index()
     {
-        $setups = Cache::remember('user.setups', 900, fn() => Auth::user()->setups);
+        $setups = Cache::remember(
+            'user.setups',
+            900,
+            function ()
+            {
+                return Setup::where('user_id', Auth::user()->id)->with(['user', 'simulator', 'track', 'car'])->get();
+            }
+        );
 
         return Inertia::render('dashboard/Setups/Index', [
-            'setups' => $setups
+            'setups' => $setups,
+            'user' => Auth::user()
         ]);
     }
 
@@ -39,6 +46,13 @@ class SetupController extends Controller
             'simulators' => $simulators,
             'tracks' => $tracks,
             'cars' => $cars,
+        ]);
+    }
+
+    public function view(Setup $setup)
+    {
+        return Inertia::render('dashboard/Setups/View', [
+            'setup' => $setup,
         ]);
     }
 

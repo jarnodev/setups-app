@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Setup extends Model
 {
+    protected $primaryKey = 'uuid';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -24,7 +26,14 @@ class Setup extends Model
         'is_public',
     ];
 
-    public function author()
+    protected $with = [
+        'user',
+        'simulator',
+        'track',
+        'car'
+    ];
+
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
