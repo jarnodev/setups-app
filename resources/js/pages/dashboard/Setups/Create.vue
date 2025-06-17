@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
-import { useForm as veeForm } from 'vee-validate';
-import { useForm as inertiaForm } from '@inertiajs/vue3';
+import { useForm } from 'vee-validate';
 import
 {
     FormField,
@@ -17,9 +16,9 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Button } from '@/components/ui/button';
 import { toTypedSchema } from '@vee-validate/zod';
 import { toast } from 'vue-sonner';
-import { h } from 'vue'
 import * as z from 'zod';
 import 'vue-sonner/style.css';
+import axios from 'axios';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -45,43 +44,29 @@ const formSchema = toTypedSchema(z.object({
     is_public: z.boolean().optional(),
 }));
 
-const { handleSubmit } = veeForm({ validationSchema: formSchema });
-
-const form = inertiaForm({
-    simulator_id: null,
-    track_id: null,
-    car_id: null,
-    lap_time_ms: '',
-    lap_time_recorded_at: null,
-    setup_type: '',
-    setup_data: null,
-    is_public: false,
+const form = useForm({
+    validationSchema: formSchema
 });
 
-const onSubmit = handleSubmit(() =>
+const onSubmit = form.handleSubmit(async (values) =>
 {
-    const payload = new FormData();
-    payload.append('simulator_id', form.simulator_id as any);
-    payload.append('track_id', form.track_id as any);
-    payload.append('car_id', form.car_id as any);
-    payload.append('lap_time_ms', form.best_lap_time);
-    payload.append('lap_time_recorded_at', form.best_lap_time);
-    payload.append('setup_type', form.setup_type);
-    payload.append('setup_data', form.setup_data as File);
-    payload.append('is_public', form.is_public ? '1' : '0');
+    const formData = new FormData();
+    formData.append('simulator_id', values.simulator_id as any);
+    formData.append('track_id', values.track_id as any);
+    formData.append('car_id', values.car_id as any);
+    formData.append('lap_time_ms', values.lap_time_ms);
+    formData.append('lap_time_recorded_at', values.lap_time_recorded_at);
+    formData.append('setup_type', values.setup_type);
+    formData.append('setup_data', values.setup_data as File);
+    formData.append('is_public', values.is_public ? '1' : '0');
 
-    form.post(route('api.setups.store'), {
-        data: payload,
-        forceFormData: true,
-        onSuccess: () =>
-        {
-            form.reset();
-
-            toast('Setup has been successfully created!', {
-                description: h('pre', { class: 'mt-2 w-[340px] rounded-md bg-slate-950 p-4' }, h('code', { class: 'text-white' }, JSON.stringify(values, null, 2))),
-            })
-        },
-    });
+    try {
+        const response = await axios.post(route('api.setups.store'), formData);
+        toast.success('Setup created succesfully');
+    } catch (error) {
+        toast.error('Failed to create setup');
+        console.error(error);
+    }
 });
 </script>
 
@@ -158,7 +143,7 @@ const onSubmit = handleSubmit(() =>
                         <FormItem>
                             <FormLabel>Lap Time Recorded At</FormLabel>
                             <FormControl>
-                                <Input v-bind="field" placeholder="2025-01-01 13:30:00" />
+                                <Input type="date" v-bind="field" placeholder="2025-01-01 13:30:00" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

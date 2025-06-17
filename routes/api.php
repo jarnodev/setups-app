@@ -11,8 +11,7 @@ Route::get('/user', function (Request $request)
 })->middleware('auth:sanctum');
 
 Route::group([
-    'prefix' => 'setups',
-    'middleware' => ['auth:sanctum']
+    'prefix' => 'setups'
 ], function ()
 {
     Route::post('generate', [RaceEngineerController::class, 'generate'])

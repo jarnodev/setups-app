@@ -61,7 +61,7 @@ class SetupController extends Controller
         $validated = $storeSetupRequest->validated();
 
         Setup::create([
-            'user_id' => Auth::id(),
+            'user_id' => 1,
             'uuid' => Str::uuid(),
             'simulator_id' => $validated['simulator_id'],
             'track_id' => $validated['track_id'],
@@ -69,7 +69,7 @@ class SetupController extends Controller
             'lap_time_ms' => $validated['lap_time_ms'],
             'lap_time_recorded_at' => $validated['lap_time_recorded_at'],
             'setup_type' => $validated['setup_type'],
-            'setup_data' => $validated['setup_data'],
+            'setup_data' => $validated['setup_data']->get(),
             'is_public' => $validated['is_public'] ?? false,
         ]);
 

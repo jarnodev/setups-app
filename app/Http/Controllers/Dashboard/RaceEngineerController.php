@@ -36,10 +36,10 @@ class RaceEngineerController extends Controller
         $validated = $generateSetupRequest->validated();
 
         // Create an instance for a specific user or chat session
-        $agent = SetupEngineerAgent::for(Auth::user()->id . time());
+        $agent = SetupEngineerAgent::for(time());
 
         // Get a response
-        $response = $agent->respond($validated['setup_data']);
+        $response = $agent->respond("Query: " . $validated['query'] . "Here is my current setup JSON:\n" . $validated['setup_data']->get());
 
         return response()->json([
             'response' => $response

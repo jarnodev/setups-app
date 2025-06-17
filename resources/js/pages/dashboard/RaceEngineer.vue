@@ -1,15 +1,15 @@
 <script setup lang="ts">
+import { vAutoAnimate } from '@formkit/auto-animate/vue'
 import AppLayout from "@/layouts/AppLayout.vue";
 import { type BreadcrumbItem } from "@/types";
 import { Head } from "@inertiajs/vue3";
-import { useForm as veeForm } from 'vee-validate';
-import { useForm as inertiaForm } from '@inertiajs/vue3';
+import { useForm } from 'vee-validate';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { toTypedSchema } from '@vee-validate/zod';
 import { toast } from 'vue-sonner';
-import { h } from 'vue'
+import axios from 'axios';
 import * as z from 'zod';
 import 'vue-sonner/style.css';
 import
@@ -35,6 +35,7 @@ const props = defineProps<{
 }>();
 
 const formSchema = toTypedSchema(z.object({
+    query: z.string().min(1, { message: 'What would you like to change?' }),
     simulator_id: z.number().int().positive({ message: 'Select simulator' }),
     track_id: z.number().int().positive({ message: 'Select track' }),
     car_id: z.number().int().positive({ message: 'Select car' }),
@@ -42,40 +43,31 @@ const formSchema = toTypedSchema(z.object({
     setup_data: z.instanceof(File, { message: 'Setup file is required' }),
 }));
 
-const { handleSubmit } = veeForm({ validationSchema: formSchema });
-
-const form = inertiaForm({
-    simulator_id: 0,
-    track_id: 0,
-    car_id: 0,
-    setup_type: '',
-    setup_data: undefined,
+const form = useForm({
+    validationSchema: formSchema
 });
 
 const setup = null;
 
-const onSubmit = handleSubmit(() =>
+const onSubmit = form.handleSubmit(async (values) =>
 {
-    const payload = new FormData();
-    payload.append('simulator_id', form.simulator_id as any);
-    payload.append('track_id', form.track_id as any);
-    payload.append('car_id', form.car_id as any);
-    payload.append('setup_type', form.setup_type);
-    payload.append('setup_data', form.setup_data as File);
+    const formData = new FormData();
+    formData.append('query', values.query);
+    formData.append('simulator_id', values.simulator_id);
+    formData.append('track_id', values.track_id);
+    formData.append('car_id', values.car_id);
+    formData.append('setup_type', values.setup_type);
+    formData.append('setup_data', values.setup_data);
 
-    form.post(route('api.setups.generate'), {
-        data: payload,
-        forceFormData: true,
-        onSuccess: () =>
-        {
-            form.reset();
-
-            toast('Race Engineer is done adjusting your setup!', {
-                description: h('pre', { class: 'mt-2 w-[340px] rounded-md bg-slate-950 p-4' }, h('code', { class: 'text-white' }, JSON.stringify(values, null, 2))),
-            })
-        }
-    });
-});
+    try {
+        const response = await axios.post(route('api.setups.generate'), formData);
+        setup.value = response.data;
+        toast.success('Setup generated successfully');
+    } catch (error) {
+        toast.error('Failed to generate setup');
+        console.error(error);
+    }
+})
 </script>
 
 <template>
@@ -87,8 +79,18 @@ const onSubmit = handleSubmit(() =>
             <div class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
                 <div class="max-w-3xl mx-auto py-10 px-4">
                     <form @submit="onSubmit" class="flex flex-col space-y-4">
+                        <FormField name="query" v-slot="{ componentField }">
+                            <FormItem v-auto-animate>
+                                <FormLabel>Query</FormLabel>
+                                <FormControl>
+                                    <Input v-bind="componentField" placeholder="e.g. 'Better front grip' or 'More stable rear'" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        </FormField>
+
                         <FormField name="simulator_id" v-slot="{ componentField }">
-                            <FormItem>
+                            <FormItem v-auto-animate>
                                 <FormLabel>Simulator</FormLabel>
                                 <FormControl>
                                     <Select v-bind="componentField" @blur="componentField.blur">
@@ -105,7 +107,7 @@ const onSubmit = handleSubmit(() =>
                         </FormField>
 
                         <FormField name="track_id" v-slot="{ componentField }">
-                            <FormItem>
+                            <FormItem v-auto-animate>
                                 <FormLabel>Track</FormLabel>
                                 <FormControl>
                                     <Select v-bind="componentField" @blur="componentField.blur">
@@ -122,7 +124,7 @@ const onSubmit = handleSubmit(() =>
                         </FormField>
 
                         <FormField name="car_id" v-slot="{ componentField }">
-                            <FormItem>
+                            <FormItem v-auto-animate>
                                 <FormLabel>Car</FormLabel>
                                 <FormControl>
                                     <Select v-bind="componentField" @blur="componentField.blur">
@@ -139,7 +141,7 @@ const onSubmit = handleSubmit(() =>
                         </FormField>
 
                         <FormField name="setup_type" v-slot="{ componentField }">
-                            <FormItem>
+                            <FormItem v-auto-animate>
                                 <FormLabel>Setup Type</FormLabel>
                                 <FormControl>
                                     <Input v-bind="componentField" placeholder="e.g. Qualifying, Race" />
@@ -149,10 +151,10 @@ const onSubmit = handleSubmit(() =>
                         </FormField>
 
                         <FormField name="setup_data" v-slot="{ handleChange }">
-                            <FormItem>
+                            <FormItem v-auto-animate>
                                 <FormLabel>Setup File</FormLabel>
                                 <FormControl>
-                                    <Input type="file" id="setup_data" accept=".json" @change="(e) => { handleChange(e); form.setup_data = (e.target.files?.[0]!) }" class="file:mr-4 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
+                                    <Input type="file" id="setup_data" accept=".json" @input="(e) => { handleChange(e); form.setup_data = (e.target.files?.[0]!) }" class="file:mr-4 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

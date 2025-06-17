@@ -61,6 +61,6 @@ class SetupEngineerAgent extends Agent
 
     public function prompt($message)
     {
-        return "Here is my current setup JSON:\n" . $message;
+        return $message;
     }
 }
