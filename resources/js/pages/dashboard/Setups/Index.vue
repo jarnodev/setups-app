@@ -19,11 +19,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 const props = defineProps<{
     setups: Array<{
         id: number;
+        uuid: string;
         name: string;
         lap_time_ms: number;
         user: {
             name: string;
-            image?: string;
+            avatar: string;
         };
         car: {
             name: string;
@@ -35,7 +36,7 @@ const props = defineProps<{
     user: User,
 }>();
 
-const formatLapTime = (timestamp) =>
+const formatLapTime = (timestamp: number) =>
 {
     const minutes = Math.floor(timestamp / 60000);
     const seconds = Math.floor((timestamp % 60000) / 1000);

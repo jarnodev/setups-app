@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Agents\SetupEngineerAgent;
+use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GenerateSetupRequest;
 use App\Models\Car;
@@ -38,8 +39,12 @@ class RaceEngineerController extends Controller
         // Create an instance for a specific user or chat session
         $agent = SetupEngineerAgent::for(time());
 
+        $message = "Query: " . $validated['query'] . ", Setup Type: " . $validated['setup_type'] . ", Here is my current setup JSON:\n" . $validated['setup_data']->get();
+
         // Get a response
-        $response = $agent->respond("Query: " . $validated['query'] . "Here is my current setup JSON:\n" . $validated['setup_data']->get());
+        $response = $agent->respond($message);
+
+        broadcast(new MessageSent($message, $response));
 
         return response()->json([
             'response' => $response

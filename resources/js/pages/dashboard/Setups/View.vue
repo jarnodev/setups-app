@@ -3,7 +3,6 @@ import AppLayout from "@/layouts/AppLayout.vue";
 import { type BreadcrumbItem } from "@/types";
 import { Head, Link } from "@inertiajs/vue3";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
 const props = defineProps<{
@@ -13,14 +12,21 @@ const props = defineProps<{
         lap_time_ms: number;
         user: {
             name: string;
-            image?: string;
+            avatar?: string;
         };
+        simulator: {
+            name: string;
+        },
         car: {
             name: string;
         };
         track: {
             name: string;
         };
+        setup_data: any;
+        lap_time_recorded_at: string | number | Date;
+        created_at: string | number | Date;
+        updated_at: string | number | Date;
     }
 }>();
 
@@ -31,7 +37,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const formatLapTime = (timestamp) =>
+const formatLapTime = (timestamp: number) =>
 {
     const minutes = Math.floor(timestamp / 60000);
     const seconds = Math.floor((timestamp % 60000) / 1000);

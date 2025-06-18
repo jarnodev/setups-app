@@ -11,6 +11,7 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { toast } from 'vue-sonner';
 import axios from 'axios';
 import * as z from 'zod';
+import { onMounted, ref } from 'vue';
 import 'vue-sonner/style.css';
 import
 {
@@ -20,6 +21,10 @@ import
     FormControl,
     FormMessage,
 } from "@/components/ui/form";
+import { useEcho } from "@laravel/echo-vue";
+import MarkdownIt from "markdown-it";
+
+const markdown = new MarkdownIt();
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -38,7 +43,6 @@ const formSchema = toTypedSchema(z.object({
     query: z.string().min(1, { message: 'What would you like to change?' }),
     simulator_id: z.number().int().positive({ message: 'Select simulator' }),
     track_id: z.number().int().positive({ message: 'Select track' }),
-    car_id: z.number().int().positive({ message: 'Select car' }),
     setup_type: z.string().min(1, { message: 'Type is required' }),
     setup_data: z.instanceof(File, { message: 'Setup file is required' }),
 }));
@@ -47,27 +51,43 @@ const form = useForm({
     validationSchema: formSchema
 });
 
-const setup = null;
+const setup = ref(null);
+
+const messages: any = ref([]);
 
 const onSubmit = form.handleSubmit(async (values) =>
 {
     const formData = new FormData();
     formData.append('query', values.query);
-    formData.append('simulator_id', values.simulator_id);
-    formData.append('track_id', values.track_id);
-    formData.append('car_id', values.car_id);
+    formData.append('simulator_id', values.simulator_id.toString());
+    formData.append('track_id', values.track_id.toString());
     formData.append('setup_type', values.setup_type);
     formData.append('setup_data', values.setup_data);
 
     try {
         const response = await axios.post(route('api.setups.generate'), formData);
         setup.value = response.data;
+        messages.value.push({ text: values.query, response: response.data });
         toast.success('Setup generated successfully');
+        form.resetForm();
     } catch (error) {
         toast.error('Failed to generate setup');
         console.error(error);
     }
-})
+});
+
+onMounted(() =>
+{
+    const { leaveChannel, leave, stopListening, listen } = useEcho(
+        'chat',
+        'MessageSent',
+        (event: { message: any; response: any; }) =>
+        {
+            messages.value.push({ text: event.message, response: event.response });
+        });
+
+    listen();
+});
 </script>
 
 <template>
@@ -93,7 +113,7 @@ const onSubmit = form.handleSubmit(async (values) =>
                             <FormItem v-auto-animate>
                                 <FormLabel>Simulator</FormLabel>
                                 <FormControl>
-                                    <Select v-bind="componentField" @blur="componentField.blur">
+                                    <Select v-bind="componentField">
                                         <SelectTrigger class="w-full">
                                             <SelectValue placeholder="Select a simulator" />
                                         </SelectTrigger>
@@ -110,29 +130,12 @@ const onSubmit = form.handleSubmit(async (values) =>
                             <FormItem v-auto-animate>
                                 <FormLabel>Track</FormLabel>
                                 <FormControl>
-                                    <Select v-bind="componentField" @blur="componentField.blur">
+                                    <Select v-bind="componentField">
                                         <SelectTrigger class="w-full">
                                             <SelectValue placeholder="Select a track" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem v-for="t in props.tracks" :key="t.id" :value="t.id">{{ t.name }}</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        </FormField>
-
-                        <FormField name="car_id" v-slot="{ componentField }">
-                            <FormItem v-auto-animate>
-                                <FormLabel>Car</FormLabel>
-                                <FormControl>
-                                    <Select v-bind="componentField" @blur="componentField.blur">
-                                        <SelectTrigger class="w-full">
-                                            <SelectValue placeholder="Select a car" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem v-for="c in props.cars" :key="c.id" :value="c.id">{{ c.name }}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </FormControl>
@@ -154,7 +157,7 @@ const onSubmit = form.handleSubmit(async (values) =>
                             <FormItem v-auto-animate>
                                 <FormLabel>Setup File</FormLabel>
                                 <FormControl>
-                                    <Input type="file" id="setup_data" accept=".json" @input="(e) => { handleChange(e); form.setup_data = (e.target.files?.[0]!) }" class="file:mr-4 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
+                                    <Input type="file" id="setup_data" accept=".json" @input="(e: Event) => { handleChange(e); form.setFieldValue('setup_data', (e.target as HTMLInputElement).files?.[0]!) }" class="file:mr-4 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -167,10 +170,8 @@ const onSubmit = form.handleSubmit(async (values) =>
 
                     <div v-if="setup" class="mt-8 bg-card border rounded-lg p-6 shadow-sm">
                         <h2 class="text-xl font-semibold mb-4 text-center">Your Setup</h2>
-                        <div class="grid md:grid-cols-2 gap-4 text-sm">
-                            <div>
-                                {{ JSON.stringify(setup) }}
-                            </div>
+                        <div class="text-sm">
+                            <div v-html="markdown.render(setup.response)"></div>
                         </div>
                         <!-- <div class="mt-4 text-sm text-muted-foreground border-t pt-3">
                             <b>Note:</b> {{ setup.explanation }}

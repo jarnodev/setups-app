@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { vAutoAnimate } from '@formkit/auto-animate/vue'
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
+import { type BreadcrumbItem } from "@/types";
 import { useForm } from 'vee-validate';
 import
 {
@@ -55,13 +57,13 @@ const onSubmit = form.handleSubmit(async (values) =>
     formData.append('track_id', values.track_id as any);
     formData.append('car_id', values.car_id as any);
     formData.append('lap_time_ms', values.lap_time_ms);
-    formData.append('lap_time_recorded_at', values.lap_time_recorded_at);
+    formData.append('lap_time_recorded_at', values.lap_time_recorded_at?.toString() ?? '');
     formData.append('setup_type', values.setup_type);
     formData.append('setup_data', values.setup_data as File);
     formData.append('is_public', values.is_public ? '1' : '0');
 
     try {
-        const response = await axios.post(route('api.setups.store'), formData);
+        await axios.post(route('api.setups.store'), formData);
         toast.success('Setup created succesfully');
     } catch (error) {
         toast.error('Failed to create setup');
@@ -78,11 +80,11 @@ const onSubmit = form.handleSubmit(async (values) =>
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
             <div class="relative flex-1">
                 <form @submit="onSubmit" class="flex flex-col space-y-2">
-                    <FormField name="simulator_id" v-slot="{ field }">
-                        <FormItem>
+                    <FormField name="simulator_id" v-slot="{ componentField }">
+                        <FormItem v-auto-animate>
                             <FormLabel>Simulator</FormLabel>
                             <FormControl>
-                                <Select v-bind="field" @blur="field.blur">
+                                <Select v-bind="componentField">
                                     <SelectTrigger class="w-full">
                                         <SelectValue placeholder="Select a simulator" />
                                     </SelectTrigger>
@@ -95,11 +97,11 @@ const onSubmit = form.handleSubmit(async (values) =>
                         </FormItem>
                     </FormField>
 
-                    <FormField name="track_id" v-slot="{ field }">
-                        <FormItem>
+                    <FormField name="track_id" v-slot="{ componentField }">
+                        <FormItem v-auto-animate>
                             <FormLabel>Track</FormLabel>
                             <FormControl>
-                                <Select v-bind="field" @blur="field.blur">
+                                <Select v-bind="componentField">
                                     <SelectTrigger class="w-full">
                                         <SelectValue placeholder="Select a track" />
                                     </SelectTrigger>
@@ -112,11 +114,11 @@ const onSubmit = form.handleSubmit(async (values) =>
                         </FormItem>
                     </FormField>
 
-                    <FormField name="car_id" v-slot="{ field }">
-                        <FormItem>
+                    <FormField name="car_id" v-slot="{ componentField }">
+                        <FormItem v-auto-animate>
                             <FormLabel>Car</FormLabel>
                             <FormControl>
-                                <Select v-bind="field" @blur="field.blur">
+                                <Select v-bind="componentField">
                                     <SelectTrigger class="w-full">
                                         <SelectValue placeholder="Select a car" />
                                     </SelectTrigger>
@@ -129,48 +131,48 @@ const onSubmit = form.handleSubmit(async (values) =>
                         </FormItem>
                     </FormField>
 
-                    <FormField name="lap_time_ms" v-slot="{ field }">
-                        <FormItem>
+                    <FormField name="lap_time_ms" v-slot="{ componentField }">
+                        <FormItem v-auto-animate>
                             <FormLabel>Best Lap Time</FormLabel>
                             <FormControl>
-                                <Input v-bind="field" placeholder="1:45.678" />
+                                <Input v-bind="componentField" placeholder="1:45.678" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     </FormField>
 
-                    <FormField name="lap_time_recorded_at" v-slot="{ field }">
-                        <FormItem>
+                    <FormField name="lap_time_recorded_at" v-slot="{ componentField }">
+                        <FormItem v-auto-animate>
                             <FormLabel>Lap Time Recorded At</FormLabel>
                             <FormControl>
-                                <Input type="date" v-bind="field" placeholder="2025-01-01 13:30:00" />
+                                <Input type="date" v-bind="componentField" placeholder="2025-01-01 13:30:00" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     </FormField>
 
-                    <FormField name="setup_type" v-slot="{ field }">
-                        <FormItem>
+                    <FormField name="setup_type" v-slot="{ componentField }">
+                        <FormItem v-auto-animate>
                             <FormLabel>Setup Type</FormLabel>
                             <FormControl>
-                                <Input v-bind="field" placeholder="e.g. Quali, Race" />
+                                <Input v-bind="componentField" placeholder="e.g. Quali, Race" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     </FormField>
 
                     <FormField name="setup_data" v-slot="{ handleChange }">
-                        <FormItem>
+                        <FormItem v-auto-animate>
                             <FormLabel>Setup File</FormLabel>
                             <FormControl>
-                                <Input type="file" id="setup_data" accept=".json" @change="(e) => { handleChange(e); form.setup_data = (e.target.files?.[0]!) }" class="file:mr-4 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
+                                <Input type="file" id="setup_data" accept=".json" @input="(e: Event) => { handleChange(e); form.setFieldValue('setup_data', (e.target as HTMLInputElement).files?.[0]!) }" class="file:mr-4 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     </FormField>
 
                     <FormField name="is_public" v-slot="{ value, handleChange }">
-                        <FormItem class="flex items-center gap-2">
+                        <FormItem v-auto-animate class="flex items-center gap-2">
                             <Switch :model-value="value" @update:model-value="handleChange" />
                             <FormLabel class="mb-0">Public</FormLabel>
                             <FormMessage />
@@ -178,7 +180,7 @@ const onSubmit = form.handleSubmit(async (values) =>
                     </FormField>
 
                     <div class="flex justify-end space-x-2 mt-4">
-                        <Button variant="secondary" type="reset" @click="form.reset()">Reset</Button>
+                        <Button variant="secondary" type="reset" @click="form.resetForm()">Reset</Button>
                         <Button type="submit">Save Setup</Button>
                     </div>
                 </form>

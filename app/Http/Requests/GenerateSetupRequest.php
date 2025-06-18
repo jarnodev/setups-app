@@ -25,7 +25,6 @@ class GenerateSetupRequest extends FormRequest
             'query' => 'required|string',
             'simulator_id' => 'required|exists:simulators,id',
             'track_id' => 'required|exists:tracks,id',
-            'car_id' => 'required|exists:cars,id',
             'setup_type' => 'required|string',
             'setup_data' => 'required|file|mimetypes:application/json',
         ];
